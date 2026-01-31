@@ -50,7 +50,7 @@ jobs:
 
           (cd "$buildDir" && zip -r "${GITHUB_WORKSPACE}/out/${zipName}" .)
 
-          cp "assets/icon.png" "out/${iconName}"
+          cp "${pluginName}/icon.png" "out/${iconName}"
 
           ls -la out
 
