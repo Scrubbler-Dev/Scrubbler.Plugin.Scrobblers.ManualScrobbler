@@ -1,0 +1,96 @@
+name: Publish plugin to Scrubbler-Plugins
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-plugin-to-scrubbler-plugins
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    env:
+      pluginName: Scrubbler.Plugin.Scrobblers.ManualScrobbler
+      tfm: net10.0
+
+    steps:
+      - name: Checkout plugin repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Test
+        run: dotnet test -c Release --no-build
+
+      - name: Create plugin zip and stage icon
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          rm -rf out
+          mkdir -p out
+
+          project="${pluginName}/${pluginName}.csproj"
+          buildDir="${pluginName}/bin/Release/${tfm}"
+
+          test -d "$buildDir"
+
+          zipName="${pluginName}.zip"
+          iconName="${pluginName}.png"
+
+          (cd "$buildDir" && zip -r "../../../../../out/${zipName}" .)
+
+          cp "assets/icon.png" "out/${iconName}"
+
+          ls -la out
+
+      - name: Checkout Scrubbler-Plugins repo
+        uses: actions/checkout@v4
+        with:
+          repository: SHOEGAZEssb/Scrubbler-Plugins
+          token: ${{ secrets.SCRUBBLER_PLUGINS_PAT }}
+          path: scrubbler-plugins
+
+      - name: Copy zip and icon into Scrubbler-Plugins
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          mkdir -p scrubbler-plugins/plugins
+
+          cp -f "out/${pluginName}.zip" "scrubbler-plugins/plugins/${pluginName}.zip"
+          cp -f "out/${pluginName}.png" "scrubbler-plugins/plugins/${pluginName}.png"
+
+          ls -la scrubbler-plugins/plugins
+
+      - name: Commit and push to Scrubbler-Plugins
+        shell: bash
+        working-directory: scrubbler-plugins
+        run: |
+          set -euxo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add plugins/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          version="${GITHUB_REF_NAME}"
+          git commit -m "Update ${pluginName} plugin artifacts (${version})"
+          git push
