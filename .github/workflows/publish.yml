@@ -32,7 +32,7 @@ jobs:
         run: dotnet build -c Release
 
       - name: Test
-        run: dotnet test -c Release --no-build
+        run: dotnet test -c Release --no-build --verbosity normal
 
       - name: Create plugin zip and stage icon
         shell: bash
@@ -42,15 +42,13 @@ jobs:
           rm -rf out
           mkdir -p out
 
-          project="${pluginName}/${pluginName}.csproj"
           buildDir="${pluginName}/bin/Release/${tfm}"
-
           test -d "$buildDir"
 
           zipName="${pluginName}.zip"
           iconName="${pluginName}.png"
 
-          (cd "$buildDir" && zip -r "../../../../../out/${zipName}" .)
+          (cd "$buildDir" && zip -r "${GITHUB_WORKSPACE}/out/${zipName}" .)
 
           cp "assets/icon.png" "out/${iconName}"
 
