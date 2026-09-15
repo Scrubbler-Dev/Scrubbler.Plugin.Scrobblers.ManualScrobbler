@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWinUI>true</UseWinUI>
     <AssemblyVersion>1.1.0</AssemblyVersion>
-    <FileVersion>1.1.0</FileVersion>
+    <FileVersion>1.1.1</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
